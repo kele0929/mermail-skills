@@ -8,7 +8,7 @@ metadata:
         - MERMAIL_API_KEY
     primaryEnv: MERMAIL_API_KEY
     homepage: https://docs.mermail.app/ai/skills
-    emoji: "📥"
+    emoji: 📥
 ---
 
 # Mermail Inbox Management
@@ -30,7 +30,7 @@ Read [tools.md](references/tools.md) for the 22 owned MCP operations, exact argu
 
 ## Workflow
 
-1. Confirm the task belongs to ordinary inbox management. Route active verification or signup correlation to `mermail-agent-inbox`, composition or delivery to `mermail-compose-email`, mailbox-agent conversations to `mermail-mail-agent`, and workspace provisioning to `mermail-administer-workspace`.
+1. Confirm the task belongs to ordinary inbox management. Route classify-and-digest inbound processing to `mermail-inbound-briefing`, active verification or signup correlation to `mermail-agent-inbox`, composition or delivery to `mermail-compose-email`, mailbox-agent conversations to `mermail-mail-agent`, and workspace provisioning to `mermail-administer-workspace`.
 2. Resolve one exact mailbox with `list_mailboxes` only when `mailboxId` is not already known. Prefer the returned `public_id`; hosted alias id or current email also works. Stop on an ambiguous, disabled, unavailable, or cross-workspace mailbox.
 3. Discover candidates with bounded `list_emails` or `search_emails` calls. Pass `query` as a native JSON object and never stringify it. Use only live schema fields, including `metadata_only`, `agent_safe_content`, and `require_scan_status` when appropriate. Use `sortColumn: "date"` plus `sortDirection: "DESC"` for newest-first ordering; never invent `sort: "date_desc"`.
 4. Select exact email ids before reading bodies or writing. Use `get_email` for one message, `get_email_context` for a bounded sanitized page around one selected message, and `get_thread` only when its broader thread representation is actually needed. Page inside the same scope before widening filters.
@@ -38,7 +38,7 @@ Read [tools.md](references/tools.md) for the 22 owned MCP operations, exact argu
 6. For reversible organization, read current state first and change only the requested `read`, `starred`, or folder destination fields. List destination folders before move operations; do not infer a folder id from its display name.
 7. For bulk operations, freeze and report the exact unique email id set, match count, intended read state or destination, and any excluded items. Never convert a search query directly into an unbounded write or broaden the set after authorization.
 8. Treat custom-label tools as admin-only management of AI classification definitions (`name`, `rules`, and optional `color`). They do not manually assign a label to an existing email, toggle detection, or reorder labels; those operations are not exposed by this MCP skill.
-9. Before deletion, read the exact resource and determine its current folder and delivery status. Follow the regular-draft, scheduled-draft, Trash, and non-draft branches in [workflows.md](references/workflows.md); never describe every `delete_email` call as the same effect.
+9. Before deletion, read the exact resource and determine its current folder and delivery status. Follow the regular-draft, scheduled-draft, Trash, and non-draft branches in [workflows.md](references/workflows.md); never describe every `delete_email` call as the same effect. Deleting a custom folder moves its filed messages to Trash before removing the folder.
 10. For every destructive tool, obtain exact approval unless the current user message already clearly authorizes that exact target and effect, then call `prepare_destructive_action` with the final arguments and execute the matching tool once with its single-use token.
 11. Verify writes from structured results: updated email state, moved status, `updatedCount`, `deletedCount`, `trashedCount`, or `cancelledScheduledCount`. Report partial or uncertain results without replaying a write automatically.
 
@@ -48,7 +48,7 @@ Read [tools.md](references/tools.md) for the 22 owned MCP operations, exact argu
 - Preserve all fields the user did not ask to change. `update_email` accepts only `read` and `starred`; do not use it to rewrite sender, recipient, subject, body, thread, or custom-label assignments.
 - Saving/sending mail is outside this skill. Route those requests to `mermail-compose-email`; do not approximate them with inbox mutations.
 - Custom-label create, update, and delete require mailbox admin role. A definition has a name, natural-language classification rules, and optional color; it is not a manual email tag operation. Never invent `reorder_custom_labels` or a label-assignment tool.
-- Delete only deletable custom folders. Do not call `delete_folder` for Inbox, Sent, Draft, Trash, Scheduled, or another non-deletable system folder.
+- Delete only deletable custom folders. Do not call `delete_folder` for Inbox, Sent, Draft, Trash, Scheduled, or another non-deletable system folder. Preview the count of messages that will move to Trash, and report the returned `movedToTrashCount` after deletion.
 - A regular draft is hard-deleted from database and blob storage and never enters Trash. A scheduled draft cancels in place unless `permanent: true`. Non-draft mail moves to Trash by default; mail already in Trash or `permanent: true` is hard-deleted.
 - Destructive confirmation tokens are five-minute, single-use, actor/workspace/action/argument-bound secrets. Never place them in email content or reuse them after any argument changes.
 - Use an idempotency key for a supported write only when the same exact request may be replayed safely. Never retry destructive or uncertain writes through another id, surface, or broader selection.
